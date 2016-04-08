@@ -10,14 +10,15 @@ fX = theano.config.floatX
 
 #Import data and extract information about the size of it
 promoters = joblib.load('promoter_sequences/promoter.pkl')
-promoters = promoters.reshape((-1, promoters.shape[1]/4, 4))
+promoters = promoters.reshape((-1, promoters.shape[1]/4, 4)).astype(fX)
 
 index_array = np.random.random_integers(0, 3, size=promoters.shape[:2])
 random_sequences = np.array([np.eye(4)[index] for index in index_array]).astype(fX)
                                             
 x_data = np.concatenate([promoters, random_sequences])
-y_data = np.concatenate([np.ones((promoters.shape[0],)),
-                         np.zeros((random_sequences.shape[0],))]).astype(np.int32)
+y_data = np.zeros((x_data.shape[0],2)).astype(fX)
+y_data[:promoters.shape[0], 0] = 1.
+y_data[promoters.shape[0]:, 1] = 1.
 
 X_train, X_valid, y_train, y_valid = sklearn.cross_validation.train_test_split(
     x_data.reshape(x_data.shape[0], -1),
@@ -40,7 +41,7 @@ l_hidden1 = lasagne.layers.DenseLayer(
 
 l_out = lasagne.layers.DenseLayer(
     l_hidden1,
-    num_units=10,
+    num_units=2,
     nonlinearity=lasagne.nonlinearities.softmax,
     W=lasagne.init.GlorotUniform(),
 )
@@ -48,14 +49,12 @@ l_out = lasagne.layers.DenseLayer(
 # ############################### network loss ###############################
 
 # int32 vector
-target_vector = T.ivector('y')
-
+target_vector = T.matrix('y')
+output = lasagne.layers.get_output(l_out)
 
 def loss_fn(output):
     return T.mean(lasagne.objectives.categorical_crossentropy(output,
                                                               target_vector))
-
-output = lasagne.layers.get_output(l_out)
 loss = loss_fn(output)
 
 # ######################## compiling theano functions ########################
@@ -94,7 +93,7 @@ valid_fn = theano.function(inputs=[l_in.input_var, target_vector],
 print("Starting training...")
 
 num_epochs = 2500
-batch_size = 200
+batch_size = 100
 for epoch_num in range(num_epochs):
     # iterate over training minibatches and update the weights
     num_batches_train = int(np.ceil(len(X_train) / batch_size))
@@ -120,8 +119,7 @@ for epoch_num in range(num_epochs):
         X_batch = X_valid[batch_slice]
         y_batch = y_valid[batch_slice]
 
-        print(y_batch.sum(), y_batch.shape[0])
-        
+
         loss, probabilities_batch = valid_fn(X_batch, y_batch)
         valid_losses.append(loss)
         list_of_probabilities_batch.append(probabilities_batch)
@@ -131,7 +129,6 @@ for epoch_num in range(num_epochs):
     # calculate classes from the probabilities
     predicted_classes = np.argmax(probabilities, axis=1)
     # calculate accuracy for this epoch
-    accuracy = sklearn.metrics.accuracy_score(y_valid, predicted_classes)
 
-    print("Epoch: %d, train_loss=%f, valid_loss=%f, valid_accuracy=%f"
-          % (epoch_num + 1, train_loss, valid_loss, accuracy))
+    print("Epoch: %d, train_loss=%f, valid_loss=%f"
+          % (epoch_num + 1, train_loss, valid_loss))
