@@ -22,6 +22,7 @@ def preproc_event(mean, std, length):
   std = std - 1
   return [mean, mean*mean, std, length]
 
+
 def load_read_data(read_file):
   h5 = h5py.File(read_file, "r")
   ret = {}
@@ -118,10 +119,10 @@ def one_hot_encode_gene(sequence):
     return np.array([base_matrix[nucleotides.find(bp)]
                      for bp in sequence])
 
-inputs = []
-outputs = []
 
 def load_data(directory_name, start):
+    inputs = []
+    outputs = []
     
     for dirname, _, files in os.walk(directory_name):
         for filename in files[start:start+20]:
@@ -129,12 +130,8 @@ def load_data(directory_name, start):
                 data = load_read_data(os.path.join(dirname, filename))
                 inputs.append(data["temp_events"][np.newaxis,...])
                 outputs.append(one_hot_encode_gene(data["called_template"])[np.newaxis:])
-        else:
-            continue
+    
+    x_data = [seq[:,np.newaxis].astype(fX) for seq in inputs]
+    y_data = [seq.astype(fX) for seq in outputs]
 
-    return 
-
-joblib.dump([inputs, outputs], "temp.pkl") 
-
-x_data = [seq[:,np.newaxis].astype(fX) for seq in inputs]
-y_data = [seq.astype(fX) for seq in outputs]
+    return x_data, y_data
