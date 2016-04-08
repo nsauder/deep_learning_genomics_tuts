@@ -9,8 +9,7 @@ import sklearn.cross_validation
 fX = theano.config.floatX
 
 #Import data and extract information about the size of it
-input_data = pickle.load(open('../book-of-genetikos-reloaded/promoters_microarray.p','rb'))
-promoters = map(np.array, zip(*input_data))[0].astype(fX)[:10000]
+promoters = joblib.load('promoter_sequences/promoter.pkl')
 promoters = promoters.reshape((-1, promoters.shape[1]/4, 4))
 
 index_array = np.random.random_integers(0, 3, size=promoters.shape[:2])
@@ -121,7 +120,7 @@ valid_fn = theano.function(inputs=[l_in.input_var, target_vector],
 print("Starting training...")
 
 num_epochs = 2500
-batch_size = 500
+batch_size = 200
 for epoch_num in range(num_epochs):
     # iterate over training minibatches and update the weights
     num_batches_train = int(np.ceil(len(X_train) / batch_size))

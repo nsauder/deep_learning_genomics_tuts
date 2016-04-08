@@ -114,18 +114,18 @@ def one_hot_encode_gene(sequence):
                      for bp in sequence])
 
 
-def load_data(directory_name, start):
+def load_data(directory_name):
     inputs = []
     outputs = []
     
     for dirname, _, files in os.walk(directory_name):
-        for filename in files[start:start+20]:
+        for filename in files:
             if filename.endswith("fast5"):
                 data = load_read_data(os.path.join(dirname, filename))
                 inputs.append(data["temp_events"][np.newaxis,...])
                 outputs.append(one_hot_encode_gene(data["called_template"])[np.newaxis:])
     
-    x_data = [seq[:,np.newaxis].astype(fX) for seq in inputs]
+    x_data = [seq.astype(fX) for seq in inputs]
     y_data = [seq.astype(fX) for seq in outputs]
 
     return x_data, y_data
