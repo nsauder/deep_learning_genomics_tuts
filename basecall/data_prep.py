@@ -1,19 +1,13 @@
-import theano
-import theano.tensor as T
-import lasagne
 import numpy as np
 import pickle
-import argparse
 import h5py
-import sys
 import numpy as np
-import theano as th
 import os
 import re
 import dateutil.parser
 import datetime
 
-fX = theano.config.floatX
+fX = np.float32
 BASE_DIR = ""
 
 
